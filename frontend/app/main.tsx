@@ -23,6 +23,11 @@ const resolveWsUrl = () => {
     return (isHttps ? 'wss://' : 'ws://') + currentHost + '/ws'
   }
 
+  // Local development: keep using the current host (localhost:5621 or 127.0.0.1)
+  if (currentHost.includes('localhost') || currentHost.includes('127.0.0.1')) {
+    return (isHttps ? 'wss://' : 'ws://') + currentHost + '/ws'
+  }
+
   // For Vercel or any other host, directly connect to Fly backend for WS
   return flyWsBase
 }
