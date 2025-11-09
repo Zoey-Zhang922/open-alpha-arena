@@ -70,6 +70,19 @@ pnpm run build
 Static assets for the frontend are produced by Vite. The backend is a standard FastAPI app that can be run with Uvicorn or any ASGI server.
 
 
+### Database Timezone
+- Default database timezone: `Asia/Shanghai` (UTC+8)
+- Configure via environment variable: `DB_TIMEZONE=Asia/Shanghai`
+- Behavior:
+  - PostgreSQL sessions set timezone at connection; server-side timestamps use BJT.
+  - SQLite uses `CURRENT_TIMESTAMP + 8 hours` for server defaults.
+
+Validation steps:
+1. Ensure backend is running: `pnpm run dev:backend`
+2. Create a record (place an order) and check timestamps in DB.
+3. For PostgreSQL: `SHOW TIME ZONE;` should return `Asia/Shanghai`.
+
+
 
 ## License
 MIT

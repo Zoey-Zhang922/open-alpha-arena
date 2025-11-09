@@ -3,7 +3,7 @@ from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 import datetime
 
-from .connection import Base
+from .connection import Base, SERVER_TIMESTAMP_DEFAULT, SERVER_TIMESTAMP_ONUPDATE, now_bjt
 
 
 class User(Base):
@@ -19,9 +19,9 @@ class User(Base):
     password_hash = Column(String(255), nullable=True)  # For future password authentication
     is_active = Column(String(10), nullable=False, default="true")
     
-    created_at = Column(TIMESTAMP, server_default=func.current_timestamp())
+    created_at = Column(TIMESTAMP, server_default=SERVER_TIMESTAMP_DEFAULT)
     updated_at = Column(
-        TIMESTAMP, server_default=func.current_timestamp(), onupdate=func.current_timestamp()
+        TIMESTAMP, server_default=SERVER_TIMESTAMP_DEFAULT, onupdate=SERVER_TIMESTAMP_ONUPDATE
     )
 
     # Relationships
@@ -56,9 +56,9 @@ class Account(Base):
     margin_used = Column(DECIMAL(18, 2), nullable=False, default=0.00)
     maintenance_margin_ratio = Column(Float, nullable=False, default=0.5)  # 50% of initial margin
     
-    created_at = Column(TIMESTAMP, server_default=func.current_timestamp())
+    created_at = Column(TIMESTAMP, server_default=SERVER_TIMESTAMP_DEFAULT)
     updated_at = Column(
-        TIMESTAMP, server_default=func.current_timestamp(), onupdate=func.current_timestamp()
+        TIMESTAMP, server_default=SERVER_TIMESTAMP_DEFAULT, onupdate=SERVER_TIMESTAMP_ONUPDATE
     )
 
     # Relationships
@@ -74,7 +74,7 @@ class UserAuthSession(Base):
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     session_token = Column(String(64), unique=True, nullable=False, index=True)
     expires_at = Column(DateTime, nullable=False)
-    created_at = Column(TIMESTAMP, server_default=func.current_timestamp())
+    created_at = Column(TIMESTAMP, server_default=SERVER_TIMESTAMP_DEFAULT)
     
     user = relationship("User", back_populates="auth_sessions")
 
@@ -95,10 +95,10 @@ class Position(Base):
     side = Column(String(10), nullable=True)  # 'LONG' or 'SHORT' for leveraged positions
     accumulated_interest = Column(DECIMAL(18, 6), nullable=False, default=0)  # 累计利息
     last_interest_time = Column(DateTime, nullable=True)  # 上次计息时间
-    update_time = Column(DateTime, default=lambda: datetime.datetime.now(datetime.timezone.utc), onupdate=lambda: datetime.datetime.now(datetime.timezone.utc))
-    created_at = Column(TIMESTAMP, server_default=func.current_timestamp())
+    update_time = Column(DateTime, default=now_bjt, onupdate=now_bjt)
+    created_at = Column(TIMESTAMP, server_default=SERVER_TIMESTAMP_DEFAULT)
     updated_at = Column(
-        TIMESTAMP, server_default=func.current_timestamp(), onupdate=func.current_timestamp()
+        TIMESTAMP, server_default=SERVER_TIMESTAMP_DEFAULT, onupdate=SERVER_TIMESTAMP_ONUPDATE
     )
 
     account = relationship("Account", back_populates="positions")
@@ -121,10 +121,10 @@ class Order(Base):
     leverage = Column(Integer, nullable=False, default=1)  # 1 for spot, >1 for leverage
     filled_quantity = Column(Float, nullable=False, default=0)
     status = Column(String(20), nullable=False)  # PENDING, FILLED, CANCELED
-    order_time = Column(DateTime, default=lambda: datetime.datetime.now(datetime.timezone.utc))
-    created_at = Column(TIMESTAMP, server_default=func.current_timestamp())
+    order_time = Column(DateTime, default=now_bjt)
+    created_at = Column(TIMESTAMP, server_default=SERVER_TIMESTAMP_DEFAULT)
     updated_at = Column(
-        TIMESTAMP, server_default=func.current_timestamp(), onupdate=func.current_timestamp()
+        TIMESTAMP, server_default=SERVER_TIMESTAMP_DEFAULT, onupdate=SERVER_TIMESTAMP_ONUPDATE
     )
 
     account = relationship("Account", back_populates="orders")
@@ -146,7 +146,7 @@ class Trade(Base):
     commission = Column(DECIMAL(18, 6), nullable=False, default=0)
     taker_fee = Column(DECIMAL(18, 6), nullable=False, default=0)  # 开仓/平仓手续费
     interest_charged = Column(DECIMAL(18, 6), nullable=False, default=0)  # 此笔交易产生的利息
-    trade_time = Column(TIMESTAMP, server_default=func.current_timestamp())
+    trade_time = Column(TIMESTAMP, server_default=SERVER_TIMESTAMP_DEFAULT)
 
     order = relationship("Order", back_populates="trades")
 
@@ -162,9 +162,9 @@ class TradingConfig(Base):
     exchange_rate = Column(Float, nullable=False, default=1.0)
     min_order_quantity = Column(Integer, nullable=False, default=1)
     lot_size = Column(Integer, nullable=False, default=1)
-    created_at = Column(TIMESTAMP, server_default=func.current_timestamp())
+    created_at = Column(TIMESTAMP, server_default=SERVER_TIMESTAMP_DEFAULT)
     updated_at = Column(
-        TIMESTAMP, server_default=func.current_timestamp(), onupdate=func.current_timestamp()
+        TIMESTAMP, server_default=SERVER_TIMESTAMP_DEFAULT, onupdate=SERVER_TIMESTAMP_ONUPDATE
     )
 
     __table_args__ = (UniqueConstraint('market', 'version'),)
@@ -177,9 +177,9 @@ class SystemConfig(Base):
     key = Column(String(100), unique=True, nullable=False)
     value = Column(String(5000), nullable=True)  # 增加到5000字符以支持长cookie
     description = Column(String(500), nullable=True)
-    created_at = Column(TIMESTAMP, server_default=func.current_timestamp())
+    created_at = Column(TIMESTAMP, server_default=SERVER_TIMESTAMP_DEFAULT)
     updated_at = Column(
-        TIMESTAMP, server_default=func.current_timestamp(), onupdate=func.current_timestamp()
+        TIMESTAMP, server_default=SERVER_TIMESTAMP_DEFAULT, onupdate=SERVER_TIMESTAMP_ONUPDATE
     )
 
 
@@ -191,9 +191,9 @@ class CryptoPrice(Base):
     market = Column(String(10), nullable=False, default="CRYPTO")
     price = Column(DECIMAL(18, 6), nullable=False)
     price_date = Column(Date, nullable=False, index=True)
-    created_at = Column(TIMESTAMP, server_default=func.current_timestamp())
+    created_at = Column(TIMESTAMP, server_default=SERVER_TIMESTAMP_DEFAULT)
     updated_at = Column(
-        TIMESTAMP, server_default=func.current_timestamp(), onupdate=func.current_timestamp()
+        TIMESTAMP, server_default=SERVER_TIMESTAMP_DEFAULT, onupdate=SERVER_TIMESTAMP_ONUPDATE
     )
 
     __table_args__ = (UniqueConstraint('symbol', 'market', 'price_date'),)
@@ -216,7 +216,7 @@ class CryptoKline(Base):
     amount = Column(DECIMAL(18, 2), nullable=True)
     change = Column(DECIMAL(18, 6), nullable=True)
     percent = Column(DECIMAL(10, 4), nullable=True)
-    created_at = Column(TIMESTAMP, server_default=func.current_timestamp())
+    created_at = Column(TIMESTAMP, server_default=SERVER_TIMESTAMP_DEFAULT)
 
     __table_args__ = (UniqueConstraint('symbol', 'market', 'period', 'timestamp'),)
 
@@ -226,7 +226,7 @@ class AIDecisionLog(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     account_id = Column(Integer, ForeignKey("accounts.id"), nullable=False)
-    decision_time = Column(TIMESTAMP, server_default=func.current_timestamp(), index=True)
+    decision_time = Column(TIMESTAMP, server_default=SERVER_TIMESTAMP_DEFAULT, index=True)
     reason = Column(String(1000), nullable=False)  # AI reasoning for the decision
     operation = Column(String(10), nullable=False)  # open/close/hold
     symbol = Column(String(20), nullable=True)  # symbol for buy/sell operations
@@ -236,7 +236,7 @@ class AIDecisionLog(Base):
     executed = Column(String(10), nullable=False, default="false")  # whether the decision was executed
     order_id = Column(Integer, ForeignKey("orders.id"), nullable=True)  # linked order if executed
     leverage = Column(Integer, nullable=False, default=1)
-    created_at = Column(TIMESTAMP, server_default=func.current_timestamp())
+    created_at = Column(TIMESTAMP, server_default=SERVER_TIMESTAMP_DEFAULT)
 
     # Relationships
     account = relationship("Account")
