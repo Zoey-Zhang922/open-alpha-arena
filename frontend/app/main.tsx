@@ -7,9 +7,24 @@ import { Toaster, toast } from 'react-hot-toast'
 let __WS_SINGLETON__: WebSocket | null = null;
 
 const resolveWsUrl = () => {
+  // SSR / build-time fallback for dev
   if (typeof window === 'undefined') return 'ws://localhost:5611/ws'
-  const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
-  return `${protocol}//${window.location.host}/ws`
+
+  const isHttps = window.location.protocol === 'https:'
+  const currentHost = window.location.host
+
+  // WHY: In production on Vercel, rewriting /ws to Fly does not reliably
+  //      preserve the Upgrade header, causing backend to respond 426.
+  //      To ensure proper WebSocket handshake, connect directly to Fly.
+  const flyWsBase = (isHttps ? 'wss://' : 'ws://') + 'open-alpha-arena.fly.dev/ws'
+
+  // If we are already on Fly domain, keep relative host to support regions
+  if (currentHost.includes('fly.dev')) {
+    return (isHttps ? 'wss://' : 'ws://') + currentHost + '/ws'
+  }
+
+  // For Vercel or any other host, directly connect to Fly backend for WS
+  return flyWsBase
 }
 
 
