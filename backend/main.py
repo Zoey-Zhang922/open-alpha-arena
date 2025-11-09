@@ -157,12 +157,26 @@ async def serve_root():
     else:
         return {"message": "Frontend not built yet"}
 
+# Explicit HTTP route guard for /ws to ensure proper WebSocket upgrade handling
+@app.get("/ws")
+async def ws_http_guard():
+    from fastapi import HTTPException
+    # HTTP clients hitting /ws without Upgrade should be rejected with 426
+    raise HTTPException(status_code=426, detail="Upgrade Required: use WebSocket protocol")
+
 # Catch-all route for SPA routing (must be last)
 @app.get("/{full_path:path}")
 async def serve_spa(full_path: str):
     """Serve the frontend index.html for SPA routes that don't match API/static"""
     # Skip API and static routes
-    if full_path.startswith("api") or full_path.startswith("static") or full_path.startswith("docs") or full_path.startswith("openapi.json"):
+    # Also exclude WebSocket path to avoid swallowing upgrade requests
+    if (
+        full_path.startswith("api")
+        or full_path.startswith("static")
+        or full_path.startswith("docs")
+        or full_path.startswith("openapi.json")
+        or full_path.startswith("ws")
+    ):
         from fastapi import HTTPException
         raise HTTPException(status_code=404, detail="Not found")
     
