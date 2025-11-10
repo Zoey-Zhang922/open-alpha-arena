@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 from typing import Dict, Set
 import json
 
-from database.connection import SessionLocal
+from database.connection import SessionLocal, DB_TIMEZONE
 from repositories.user_repo import get_or_create_user, get_user
 from repositories.account_repo import get_or_create_default_account, get_account
 from repositories.order_repo import list_orders
@@ -16,6 +16,22 @@ from sqlalchemy import func
 from datetime import datetime, timedelta, date
 import logging
 from services.asset_curve_calculator import get_all_asset_curves_data_new
+from zoneinfo import ZoneInfo
+
+
+def format_datetime_with_timezone(dt):
+    """
+    Format datetime object to ISO format with timezone info.
+    If datetime is naive (no timezone), assume it's in DB_TIMEZONE.
+    """
+    if dt is None:
+        return None
+    
+    # If datetime is naive (no timezone info), add DB_TIMEZONE
+    if dt.tzinfo is None:
+        dt = dt.replace(tzinfo=ZoneInfo(DB_TIMEZONE))
+    
+    return dt.isoformat()
 
 
 class ConnectionManager:
@@ -216,14 +232,14 @@ async def _send_snapshot_optimized(db: Session, account_id: int):
                 "price": float(t.price),
                 "quantity": float(t.quantity),
                 "commission": float(t.commission),
-                "trade_time": str(t.trade_time),
+                "trade_time": format_datetime_with_timezone(t.trade_time),
             }
             for t in trades
         ],
         "ai_decisions": [
             {
                 "id": d.id,
-                "decision_time": str(d.decision_time),
+                "decision_time": format_datetime_with_timezone(d.decision_time),
                 "reason": d.reason,
                 "operation": d.operation,
                 "symbol": d.symbol,
@@ -360,14 +376,14 @@ async def _send_snapshot(db: Session, account_id: int):
                 "price": float(t.price),
                 "quantity": float(t.quantity),
                 "commission": float(t.commission),
-                "trade_time": str(t.trade_time),
+                "trade_time": format_datetime_with_timezone(t.trade_time),
             }
             for t in trades
         ],
         "ai_decisions": [
             {
                 "id": d.id,
-                "decision_time": str(d.decision_time),
+                "decision_time": format_datetime_with_timezone(d.decision_time),
                 "reason": d.reason,
                 "operation": d.operation,
                 "symbol": d.symbol,

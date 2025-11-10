@@ -267,6 +267,13 @@ export async function testLLMConnection(testData: {
   return response.json()
 }
 
+export async function toggleAccountActive(accountId: number): Promise<TradingAccount> {
+  const response = await apiRequest(`/account/${accountId}/toggle-active`, {
+    method: 'PATCH'
+  })
+  return response.json()
+}
+
 // Legacy aliases for backward compatibility
 export type AIAccount = TradingAccount
 export type AIAccountCreate = TradingAccountCreate

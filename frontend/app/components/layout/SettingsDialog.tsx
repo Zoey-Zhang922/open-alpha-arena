@@ -15,6 +15,7 @@ import {
   createAccount as createAccount,
   updateAccount as updateAccount,
   testLLMConnection,
+  toggleAccountActive,
   type TradingAccount,
   type TradingAccountCreate,
   type TradingAccountUpdate
@@ -46,6 +47,7 @@ export default function SettingsDialog({ open, onOpenChange, onAccountUpdated }:
   const [error, setError] = useState<string | null>(null)
   const [testResult, setTestResult] = useState<string | null>(null)
   const [testing, setTesting] = useState(false)
+  const [togglingId, setTogglingId] = useState<number | null>(null)
   const [newAccount, setNewAccount] = useState<AIAccountCreate>({
     name: '',
     model: '',
@@ -234,9 +236,29 @@ export default function SettingsDialog({ open, onOpenChange, onAccountUpdated }:
     setError(null)
   }
 
+  const handleToggleActive = async (accountId: number) => {
+    if (togglingId !== null) return // 防止重复点击
+    
+    try {
+      setTogglingId(accountId)
+      await toggleAccountActive(accountId)
+      await loadAccounts()
+      toast.success('Account status updated')
+      
+      // Notify parent component that account was updated
+      onAccountUpdated?.()
+    } catch (error) {
+      console.error('Failed to toggle account status:', error)
+      const errorMessage = error instanceof Error ? error.message : 'Failed to toggle account status'
+      toast.error(errorMessage)
+    } finally {
+      setTogglingId(null)
+    }
+  }
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[600px]">
+      <DialogContent className="sm:max-w-[800px] max-h-[85vh] flex flex-col">
         <DialogHeader>
           <DialogTitle>Account Management</DialogTitle>
           <DialogDescription>
@@ -250,10 +272,10 @@ export default function SettingsDialog({ open, onOpenChange, onAccountUpdated }:
           </div>
         )}
 
-        <div className="space-y-6">
+        <div className="space-y-6 overflow-y-auto flex-1 pr-2">
           {/* Existing Accounts */}
           <div className="space-y-4">
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between sticky top-0 bg-white z-10 pb-2">
               <h3 className="text-lg font-medium">Trading Accounts</h3>
               <Button
                 onClick={() => setShowAddForm(!showAddForm)}
@@ -317,7 +339,16 @@ export default function SettingsDialog({ open, onOpenChange, onAccountUpdated }:
                     ) : (
                       <div className="flex items-center justify-between">
                         <div className="space-y-1 flex-1">
-                          <div className="font-medium">{account.name}</div>
+                          <div className="flex items-center gap-2">
+                            <div className="font-medium">{account.name}</div>
+                            <span className={`text-xs px-2 py-0.5 rounded ${
+                              account.is_active 
+                                ? 'bg-green-100 text-green-700' 
+                                : 'bg-gray-100 text-gray-600'
+                            }`}>
+                              {account.is_active ? 'Active' : 'Inactive'}
+                            </span>
+                          </div>
                           <div className="text-xs text-muted-foreground">
                             {account.model ? `Model: ${account.model}` : 'No model configured'}
                           </div>
@@ -337,9 +368,25 @@ export default function SettingsDialog({ open, onOpenChange, onAccountUpdated }:
                         </div>
                         <div className="flex gap-2">
                           <Button
+                            onClick={() => handleToggleActive(account.id)}
+                            variant={account.is_active ? "outline" : "default"}
+                            size="sm"
+                            disabled={togglingId !== null}
+                          >
+                            {togglingId === account.id ? (
+                              <span className="flex items-center gap-2">
+                                <span className="animate-spin">⏳</span>
+                                {account.is_active ? 'Deactivating...' : 'Activating...'}
+                              </span>
+                            ) : (
+                              account.is_active ? 'Deactivate' : 'Activate'
+                            )}
+                          </Button>
+                          <Button
                             onClick={() => startEdit(account)}
                             variant="outline"
                             size="sm"
+                            disabled={togglingId !== null}
                           >
                             <Pencil className="h-4 w-4" />
                           </Button>

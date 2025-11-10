@@ -28,10 +28,10 @@ def get_db():
 
 @router.get("/list")
 async def list_all_accounts(db: Session = Depends(get_db)):
-    """Get all active accounts (for paper trading demo)"""
+    """Get all accounts including inactive ones (for paper trading demo)"""
     try:
         from database.models import User
-        accounts = db.query(Account).filter(Account.is_active == "true").all()
+        accounts = db.query(Account).all()
         
         result = []
         for account in accounts:
@@ -227,8 +227,7 @@ async def update_account_settings(account_id: int, payload: dict, db: Session = 
         logger.info(f"Updating account {account_id} with payload: {payload}")
         
         account = db.query(Account).filter(
-            Account.id == account_id,
-            Account.is_active == "true"
+            Account.id == account_id
         ).first()
         
         if not account:
@@ -571,3 +570,50 @@ async def test_llm_connection(payload: dict):
     except Exception as e:
         logger.error(f"Failed to test LLM connection: {e}", exc_info=True)
         return {"success": False, "message": f"Failed to test LLM connection: {str(e)}"}
+
+
+@router.patch("/{account_id}/toggle-active")
+async def toggle_account_status(account_id: int, db: Session = Depends(get_db)):
+    """Toggle account active status (for paper trading demo)"""
+    try:
+        from database.models import User
+        
+        account = db.query(Account).filter(Account.id == account_id).first()
+        
+        if not account:
+            raise HTTPException(status_code=404, detail="Account not found")
+        
+        # Toggle active status
+        account.is_active = "false" if account.is_active == "true" else "true"
+        db.commit()
+        db.refresh(account)
+        
+        # Reset auto trading job after status change
+        try:
+            from services.scheduler import reset_auto_trading_job
+            reset_auto_trading_job()
+            logger.info(f"Auto trading job reset after account {account_id} status toggle")
+        except Exception as e:
+            logger.warning(f"Failed to reset auto trading job: {e}")
+        
+        user = db.query(User).filter(User.id == account.user_id).first()
+        
+        return {
+            "id": account.id,
+            "user_id": account.user_id,
+            "username": user.username if user else "unknown",
+            "name": account.name,
+            "account_type": account.account_type,
+            "initial_capital": float(account.initial_capital),
+            "current_cash": float(account.current_cash),
+            "frozen_cash": float(account.frozen_cash),
+            "model": account.model,
+            "base_url": account.base_url,
+            "api_key": account.api_key,
+            "is_active": account.is_active == "true"
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Failed to toggle account status: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=f"Failed to toggle account status: {str(e)}")

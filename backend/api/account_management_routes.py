@@ -11,7 +11,7 @@ from database.connection import SessionLocal
 from database.models import Account
 from repositories.account_repo import (
     create_account, get_account, get_accounts_by_user,
-    update_account, update_account_cash, deactivate_account,
+    update_account, update_account_cash, deactivate_account, activate_account,
     get_or_create_default_account
 )
 from repositories.user_repo import verify_auth_session, get_user
@@ -42,10 +42,10 @@ async def get_current_user_id(session_token: str, db: Session = Depends(get_db))
 
 @router.get("/", response_model=List[AccountOut])
 async def list_user_accounts(session_token: str, db: Session = Depends(get_db)):
-    """Get all trading accounts for the current user"""
+    """Get all trading accounts for the current user (including inactive)"""
     try:
         user_id = await get_current_user_id(session_token, db)
-        accounts = get_accounts_by_user(db, user_id, active_only=True)
+        accounts = get_accounts_by_user(db, user_id, active_only=False)
         
         return [
             AccountOut(
@@ -237,6 +237,61 @@ async def delete_trading_account(
     except Exception as e:
         logger.error(f"Failed to delete account: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=f"Failed to delete account: {str(e)}")
+
+
+@router.patch("/{account_id}/toggle-active")
+async def toggle_account_active(
+    account_id: int,
+    session_token: str,
+    db: Session = Depends(get_db)
+):
+    """Toggle account active status"""
+    try:
+        user_id = await get_current_user_id(session_token, db)
+        account = get_account(db, account_id)
+        
+        if not account:
+            raise HTTPException(status_code=404, detail="Account not found")
+        
+        if account.user_id != user_id:
+            raise HTTPException(status_code=403, detail="Access denied")
+        
+        # Toggle active status
+        if account.is_active == "true":
+            updated_account = deactivate_account(db, account_id)
+        else:
+            updated_account = activate_account(db, account_id)
+        
+        if not updated_account:
+            raise HTTPException(status_code=500, detail="Failed to toggle account status")
+        
+        # Reset auto trading job after status change
+        try:
+            from services.scheduler import reset_auto_trading_job
+            reset_auto_trading_job()
+            logger.info(f"Auto trading job reset after account {account_id} status toggle")
+        except Exception as e:
+            logger.warning(f"Failed to reset auto trading job: {e}")
+        
+        return AccountOut(
+            id=updated_account.id,
+            user_id=updated_account.user_id,
+            name=updated_account.name,
+            model=updated_account.model,
+            base_url=updated_account.base_url,
+            api_key="****" + updated_account.api_key[-4:] if updated_account.api_key else "",
+            initial_capital=float(updated_account.initial_capital),
+            current_cash=float(updated_account.current_cash),
+            frozen_cash=float(updated_account.frozen_cash),
+            account_type=updated_account.account_type,
+            is_active=updated_account.is_active == "true"
+        )
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Failed to toggle account status: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=f"Failed to toggle account status: {str(e)}")
 
 
 @router.get("/{account_id}/default")

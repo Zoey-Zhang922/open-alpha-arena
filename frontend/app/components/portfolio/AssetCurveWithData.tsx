@@ -13,6 +13,7 @@ import {
 } from 'chart.js'
 import { Card } from '@/components/ui/card'
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { formatChartLabel } from '@/lib/utils'
 
 // 注册Chart.js组件
 ChartJS.register(
@@ -162,26 +163,9 @@ export default function AssetCurve({ data: initialData, wsRef }: AssetCurveProps
     'rgb(236, 72, 153)',    // pink
   ]
 
-  // Format labels based on timeframe
+  // Format labels based on timeframe using utility function
   const formatLabel = (timestamp: string) => {
-    const d = new Date(timestamp)
-    if (timeframe === '5m') {
-      return d.toLocaleTimeString('en-US', {
-        hour: '2-digit',
-        minute: '2-digit'
-      })
-    } else if (timeframe === '1h') {
-      return d.toLocaleString('en-US', {
-        month: 'short',
-        day: 'numeric',
-        hour: '2-digit'
-      })
-    } else {
-      return d.toLocaleDateString('en-US', {
-        month: 'short',
-        day: 'numeric'
-      })
-    }
+    return formatChartLabel(timestamp, timeframe)
   }
 
   const chartData = {

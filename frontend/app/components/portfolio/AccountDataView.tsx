@@ -10,6 +10,7 @@ import TradingPanel from '@/components/trading/TradingPanel'
 import { Doughnut } from 'react-chartjs-2'
 import { Chart as ChartJS, ArcElement, Tooltip as ChartTooltip, Legend } from 'chart.js'
 import { AIDecision } from '@/lib/api'
+import { formatDateTime } from '@/lib/utils'
 
 // Register Chart.js components for pie chart
 ChartJS.register(ArcElement, ChartTooltip, Legend)
@@ -347,7 +348,7 @@ function TradeHistory({ trades }: { trades: Trade[] }) {
         <TableBody>
           {trades.map(t => (
             <TableRow key={t.id}>
-              <TableCell>{new Date(t.trade_time).toLocaleString()}</TableCell>
+              <TableCell>{formatDateTime(t.trade_time)}</TableCell>
               <TableCell>{t.symbol}.{t.market}</TableCell>
               <TableCell className={t.side === 'BUY' ? 'text-green-600' : 'text-red-600'}>
                 {t.side}
@@ -385,7 +386,7 @@ function AIDecisionLog({ aiDecisions }: { aiDecisions: AIDecision[] }) {
         <TableBody>
           {aiDecisions.map(decision => (
             <TableRow key={decision.id}>
-              <TableCell>{new Date(decision.decision_time).toLocaleString()}</TableCell>
+              <TableCell>{formatDateTime(decision.decision_time)}</TableCell>
               <TableCell>
                 <span className={`px-2 py-1 rounded text-xs font-medium ${
                   decision.operation === 'buy' ? 'bg-green-100 text-green-800' :

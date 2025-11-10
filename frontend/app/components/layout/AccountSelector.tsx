@@ -39,11 +39,14 @@ export default function AccountSelector({ currentAccount, onAccountChange, usern
     // If external accounts are provided, use them and skip internal fetching
     if (externalAccounts && externalAccounts.length >= 0) {
       // Map external accounts to AccountWithAssets shape if needed
-      const mapped = externalAccounts.map((a: any) => ({
-        ...a,
-        total_assets: (a as any).total_assets ?? ((a.current_cash || 0) + (a.frozen_cash || 0)),
-        positions_value: (a as any).positions_value ?? 0,
-      }))
+      // Filter out inactive accounts
+      const mapped = externalAccounts
+        .filter((a: any) => a.is_active !== false)  // Only show active accounts
+        .map((a: any) => ({
+          ...a,
+          total_assets: (a as any).total_assets ?? ((a.current_cash || 0) + (a.frozen_cash || 0)),
+          positions_value: (a as any).positions_value ?? 0,
+        }))
       setAccounts(mapped)
       setLoading(loadingExternal ?? false)
       return
@@ -59,11 +62,14 @@ export default function AccountSelector({ currentAccount, onAccountChange, usern
       
       // Get account-specific data for each account
       // Fast path: avoid per-account overview calls to minimize latency on page switches
-      const accountsWithAssets: AccountWithAssets[] = accountData.map((account) => ({
-        ...account,
-        total_assets: account.current_cash + account.frozen_cash,
-        positions_value: 0,
-      }))
+      // Filter out inactive accounts
+      const accountsWithAssets: AccountWithAssets[] = accountData
+        .filter((account) => account.is_active !== false)  // Only show active accounts
+        .map((account) => ({
+          ...account,
+          total_assets: account.current_cash + account.frozen_cash,
+          positions_value: 0,
+        }))
       
       setAccounts(accountsWithAssets)
     } catch (error) {
