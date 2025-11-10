@@ -1,0 +1,160 @@
+# Open Alpha Arena 项目规范
+
+## 文档管理规范
+
+### 规则
+1. **所有技术文档必须放在 `doc/` 文件夹中**
+   - 开发指南、部署指南、API 文档等都应放在 `doc/` 目录
+   - 根目录只保留项目概述的 `README.md`
+   
+2. **临时脚本管理**
+   - 迁移、修复等一次性脚本应放在 `scripts/` 文件夹
+   - 使用后及时清理，核心经验提炼到文档中
+   - 如果脚本有持续价值，添加注释说明用途
+   
+3. **禁止在根目录创建散落的文档**
+   - ❌ 不要创建 `MIGRATION_*.md`、`FIX_*.md`、`DEPLOY_*.md` 等
+   - ✅ 应该更新 `doc/troubleshooting.md` 或相关文档
+
+### 文档结构
+
+```
+doc/
+├── README.md              # 文档目录索引
+├── development-guide.md   # 开发指南
+├── deployment-guide.md    # 部署指南
+├── troubleshooting.md     # 问题排查与解决经验
+└── [其他专题文档].md      # 按需添加
+```
+
+### 提交代码时
+
+在提交包含文档或脚本的代码时：
+- 确认文档已放在 `doc/` 目录
+- 确认临时脚本已清理或移到 `scripts/`
+- 更新 `doc/README.md` 索引（如有新文档）
+
+## 代码规范
+
+### Python (Backend)
+
+- 使用 `ruff` 进行代码检查和格式化
+- 命名：snake_case
+- 类型注解：尽可能添加类型提示
+
+```python
+# 示例
+def get_account_balance(account_id: int) -> Decimal:
+    """获取账户余额"""
+    pass
+```
+
+### TypeScript/React (Frontend)
+
+- 使用 ESLint 检查代码
+- 命名：camelCase（变量/函数），PascalCase（组件）
+- 组件文件：使用 `.tsx` 扩展名
+
+```typescript
+// 示例
+interface AccountProps {
+  accountId: number;
+  balance: number;
+}
+
+export const AccountCard: React.FC<AccountProps> = ({ accountId, balance }) => {
+  return <div>...</div>;
+};
+```
+
+## 提交信息规范
+
+使用约定式提交（Conventional Commits）：
+
+```
+<type>(<scope>): <subject>
+
+[optional body]
+```
+
+### Type 类型
+
+- `feat`: 新功能
+- `fix`: Bug 修复
+- `docs`: 文档更新
+- `style`: 代码格式（不影响功能）
+- `refactor`: 重构
+- `perf`: 性能优化
+- `test`: 测试相关
+- `chore`: 构建/工具相关
+
+### 示例
+
+```
+feat(trading): 添加止损单功能
+
+实现了市价止损和限价止损两种类型的止损单。
+
+- 添加 StopLossOrder 模型
+- 实现止损单触发逻辑
+- 更新前端界面
+```
+
+## 环境配置
+
+### 必需的环境变量
+
+**Backend (`backend/.env`)**:
+```bash
+DATABASE_URL=postgresql://...
+DB_TIMEZONE=Asia/Shanghai
+```
+
+**重要**: `.env` 文件不应提交到 Git，已在 `.gitignore` 中配置。
+
+## AI 开发助手指引
+
+### 创建文档时
+
+✅ **应该**:
+- 将文档保存到 `doc/` 文件夹
+- 更新 `doc/README.md` 添加索引链接
+- 使用清晰的 Markdown 格式
+- 包含代码示例和命令行示例
+
+❌ **不应该**:
+- 在根目录创建 `.md` 文档（除了 `README.md`）
+- 创建重复内容的文档
+- 创建无索引的孤立文档
+
+### 创建脚本时
+
+✅ **应该**:
+- 评估脚本的生命周期（临时 vs 持久）
+- 临时脚本放在 `scripts/` 或完成后删除
+- 持久脚本放在适当的位置并添加文档
+- 关键操作提炼到 `doc/troubleshooting.md`
+
+❌ **不应该**:
+- 在根目录或 `backend/` 散落一次性脚本
+- 保留已完成任务的临时脚本
+- 创建无注释的脚本
+
+### 修复 Bug 时
+
+1. 修复代码
+2. 记录到 `doc/troubleshooting.md`
+3. 包含：问题描述、根因、解决方案、验证方法
+4. 删除临时的修复脚本（如已不需要）
+
+## 部署流程
+
+1. **本地测试**: `pnpm run dev`
+2. **代码检查**: 运行 linter
+3. **提交代码**: 使用规范的提交信息
+4. **部署后端**: `fly deploy --app open-alpha-arena`
+5. **部署前端**: `vercel --prod` 或 Git push（自动部署）
+6. **验证部署**: 检查健康端点和日志
+
+详见 [部署指南](doc/deployment-guide.md)
+

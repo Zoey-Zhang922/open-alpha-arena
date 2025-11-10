@@ -4,18 +4,75 @@
 
 <img width="2882" height="1792" alt="image" src="https://github.com/user-attachments/assets/66a5283b-3761-4992-82d1-8cd01f4d518d" />
 
-This is a project inspired by [nof1 Alpha Arena](https://nof1.ai), you can setup AI trading bot on crypto market.
+一个受 [nof1 Alpha Arena](https://nof1.ai) 启发的项目，让你可以在加密货币市场上设置 AI 交易机器人。
 
-DONE:
-- Paper Trading
-- OpenAI compatible API
-- LEVERAGE
-- ccxt for quotation
+## ✨ 特性
 
-TODO:
-- real trading (actually you can implement it with ccxt by the help of AI coding tools easily)
+- ✅ 模拟交易（Paper Trading）
+- ✅ OpenAI 兼容 API
+- ✅ 杠杆交易支持
+- ✅ ccxt 行情数据
+- 🚧 实盘交易（可通过 ccxt 轻松实现）
 
-## Star History
+## 🚀 快速开始
+
+### 环境要求
+
+- Node.js 18+ 和 pnpm
+- Python 3.10+ 和 uv
+
+### 安装依赖
+
+```bash
+# 安装 JavaScript 依赖和 Python 环境
+pnpm run install:all
+```
+
+### 本地开发
+
+启动前后端开发服务器：
+
+```bash
+pnpm run dev
+```
+
+访问：
+- **前端**: http://localhost:5173
+- **后端**: http://localhost:5611
+- **API 文档**: http://localhost:5611/docs
+
+### 构建
+
+```bash
+pnpm run build
+```
+
+## 📚 文档
+
+完整文档请查看 [doc/](./doc/) 目录：
+
+- **[开发指南](./doc/development-guide.md)** - 环境配置、本地开发、数据库设置
+- **[部署指南](./doc/deployment-guide.md)** - Fly.io、Vercel 部署流程
+- **[问题排查](./doc/troubleshooting.md)** - 常见问题、Bug 修复经验
+
+## 🏗️ 技术栈
+
+**后端**:
+- FastAPI (Python)
+- SQLAlchemy + PostgreSQL (Supabase)
+- WebSocket 实时通信
+
+**前端**:
+- React + TypeScript
+- Vite
+- Tailwind CSS
+
+**部署**:
+- 后端: Fly.io
+- 前端: Vercel
+- 数据库: Supabase
+
+## 📊 Star History
 
 <a href="https://www.star-history.com/#etrobot/open-alpha-arena&type=date&legend=top-left">
  <picture>
@@ -25,64 +82,6 @@ TODO:
  </picture>
 </a>
 
-## Getting Started
+## 📄 License
 
-### Prerequisites
-- Node.js 18+ and pnpm
-- Python 3.10+ and uv
-
-### Install
-```bash
-# install JS deps and sync Python env
-pnpm run install:all
-```
-
-### Development
-By default, the workspace scripts launch:
-- Backend on port 5611
-- Frontend on port 5621
-
-Start both dev servers:
-```bash
-pnpm run dev
-```
-Open:
-- Frontend: http://localhost:5621
-- Backend WS: ws://localhost:5611/ws
-
-Important: The frontend source is currently configured for port  5621. To use the workspace defaults (5611), update the following in frontend/app/main.tsx:
-- WebSocket URL: ws://localhost:5611/ws
-- API_BASE: http://127.0.0.1:5611
-
-Alternatively, run the backend on  5621:
-```bash
-# from repo root
-cd backend
-uv sync
-uv run uvicorn main:app --reload --port  5621 --host 0.0.0.0
-```
-
-### Build
-```bash
-# build frontend; backend has no dedicated build step
-pnpm run build
-```
-Static assets for the frontend are produced by Vite. The backend is a standard FastAPI app that can be run with Uvicorn or any ASGI server.
-
-
-### Database Timezone
-- Default database timezone: `Asia/Shanghai` (UTC+8)
-- Configure via environment variable: `DB_TIMEZONE=Asia/Shanghai`
-- Behavior:
-  - PostgreSQL sessions set timezone at connection; server-side timestamps use BJT.
-  - SQLite uses `CURRENT_TIMESTAMP + 8 hours` for server defaults.
-
-Validation steps:
-1. Ensure backend is running: `pnpm run dev:backend`
-2. Create a record (place an order) and check timestamps in DB.
-3. For PostgreSQL: `SHOW TIME ZONE;` should return `Asia/Shanghai`.
-
-
-
-## License
 MIT
