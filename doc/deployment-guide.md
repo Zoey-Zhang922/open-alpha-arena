@@ -229,6 +229,21 @@ wscat -c wss://open-alpha-arena.fly.dev/ws
 
 ## 更新部署
 
+### 快速部署（使用脚本）
+
+项目提供了简化的部署脚本：
+
+```bash
+# 部署前后端
+./scripts/deploy.sh
+
+# 只部署后端
+./scripts/deploy.sh --backend
+
+# 只部署前端
+./scripts/deploy.sh --frontend
+```
+
 ### 更新后端
 
 ```bash
